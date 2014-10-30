@@ -3,10 +3,12 @@ from datetime import datetime
 import time
 
 from replay.pipeline.pipeline import (DataMuggler, PipelineComponent,
-                                      MuggleWatcherLatest,
-                                      MuggleWatcherTwoLists,
-                                      DmImgSequence
-)
+                                      MuggleWatcherLatest)
+
+
+from replay.model.scalar_model import ScalarCollection
+from enaml.qt.qt_application import QtApplication
+import enaml
 
 import matplotlib.pyplot as plt
 from nsls2 import core
@@ -16,6 +18,11 @@ import numpy as np
 #                                                     CrossSection)
 from nsls2.fitting.model.physics_model import GaussianModel
 import lmfit
+
+import socket
+import select
+import broker.config as cfg
+import json
 
 
 def plotter(title, xlabel, ylabel, ax=None, N=None, ln_sty=None, fit=False):
@@ -151,6 +158,7 @@ def plotter(title, xlabel, ylabel, ax=None, N=None, ln_sty=None, fit=False):
 #
 #     return inner
 
+
 # stolen from other live demo
 class FrameSourcerBrownian(QtCore.QObject):
     """
@@ -277,6 +285,41 @@ class FrameSourcerBrownian(QtCore.QObject):
     def stop(self):
         self.timer.stop()
 
+
+class ArmanListener(QtCore.QObject):
+    """
+    Class to listen to the first draft of the socket-based I/O
+    """
+    event = QtCore.Signal(object, dict)
+    trigger_read = QtCore.Signal()
+
+    def __init__(self, **kwargs):
+        QtCore.QObject.__init__(self, **kwargs)
+        self._count = 0
+        self.trigger_read.connect(self.read_socket)
+
+    @QtCore.Slot()
+    def read_socket(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        s.connect((cfg.SEND_HOST, cfg.SEND_PORT))
+        s.setblocking(0)
+        data = None
+        ready = select.select([s], [], [], 10)
+        if ready[0]:
+            try:
+                data = s.recv(4096)
+            except:
+                raise
+        if data:
+            my_data = json.loads(data)
+            my_data['count'] = self._count
+            self._count += 1
+            self.event.emit(datetime.now(), my_data)
+            print(my_data)
+        s.close()
+
+
 # used below
 img_size = (150, 150)
 period = 150
@@ -293,11 +336,14 @@ def scale_fluc(scale, count):
         return scale + .5
     return None
 
-frame_source = FrameSourcerBrownian(img_size, delay=1, step_scale=.5,
-                                    I_fluc_function=I_func_gaus,
-                                    step_fluc_function=scale_fluc,
-                                    max_count=center * 2
-                                    )
+# frame_source = FrameSourcerBrownian(img_size, delay=1, step_scale=.5,
+#                                     I_fluc_function=I_func_gaus,
+#                                     step_fluc_function=scale_fluc,
+#                                     max_count=center * 2
+#                                     )
+
+
+frame_source = ArmanListener()
 
 # set up mugglers
 # (name, fill_type, #num dims)
@@ -352,12 +398,6 @@ p1.source_signal.connect(p2.sink_slot)
 p2.source_signal.connect(dm2.append_data)
 
 
-from replay.model.scalar_model import ScalarCollection
-from replay.model.cross_section_model import CrossSectionModel
-from enaml.qt.qt_application import QtApplication
-import enaml
-import numpy as np
-
 app = QtApplication()
 
 with enaml.imports():
@@ -370,6 +410,10 @@ cross_section_model = CrossSectionModel(data_muggler=dm, name='img',
 view = PipelineView(scalar_collection=scalar_collection,
                     cross_section_model=cross_section_model)
 view.show()
+
 frame_source.start()
 
+thread = QtCore.QThread()
+frame_source.moveToThread(thread)
+thread.start()
 app.start()
