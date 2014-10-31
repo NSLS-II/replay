@@ -3,10 +3,11 @@ from datetime import datetime
 import time
 
 from replay.pipeline.pipeline import (DataMuggler, PipelineComponent,
-                                      MuggleWatcherLatest)
+                                      MuggleWatcherLatest, DmImgSequence)
 
 
 from replay.model.scalar_model import ScalarCollection
+from replay.model.cross_section_model import CrossSectionModel
 from enaml.qt.qt_application import QtApplication
 import enaml
 
@@ -222,6 +223,8 @@ class FrameSourcerBrownian(QtCore.QObject):
             max_count = np.iinfo(np.int64).max
         self._max_count = max_count
 
+
+
         if I_fluc_function is None:
             I_fluc_function = lambda x: 1
 
@@ -286,38 +289,80 @@ class FrameSourcerBrownian(QtCore.QObject):
         self.timer.stop()
 
 
+class ArmanWorker(QtCore.QObject):
+    event = QtCore.Signal(object, dict)
+    read = QtCore.Signal()
+
+    def __init__(self, parent=None):
+        QtCore.QObject.__init__(self, parent)
+
+        self.read.connect(self.self_spammer)
+
+
+    def self_spammer(self):
+        print (QtCore.QThread.currentThreadId())
+        print("self spam spam spam spam")
+
+    def read_socket(self):
+        print('reading')
+        print (QtCore.QThread.currentThreadId())
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((cfg.SEND_HOST, cfg.SEND_PORT))
+        print('sockets connect')
+        ready = select.select([s], [], [], 10)
+        if ready[0]:
+            print('ready')
+            accum_data = []
+            data = s.recv(4096)
+            print('read once')
+            while len(data):
+                accum_data.append(data)
+                data = s.recv(4096)
+            data = ''.join(accum_data)
+            print('joined')
+            if data:
+                my_data = json.loads(data)
+                print('loaded')
+                for d in my_data:
+                    if 'img' in d:
+                        d['img'] = np.asarray(d['img'])
+                    print('emitted ', list(d))
+                    self.event.emit(datetime.now(), d)
+
+        s.close()
+        self.read.emit()
+
+
 class ArmanListener(QtCore.QObject):
     """
     Class to listen to the first draft of the socket-based I/O
     """
     event = QtCore.Signal(object, dict)
     trigger_read = QtCore.Signal()
+    def __init__(self, parent=None, **kwargs):
+        QtCore.QObject.__init__(self, parent=parent, **kwargs)
+        self.worker = ArmanWorker()
 
-    def __init__(self, **kwargs):
-        QtCore.QObject.__init__(self, **kwargs)
-        self._count = 0
-        self.trigger_read.connect(self.read_socket)
+        self.thread = QtCore.QThread(parent=self)
+        self.worker.moveToThread(self.thread)
 
-    @QtCore.Slot()
-    def read_socket(self):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #self.worker.event.connect(self.event)
+        self.worker.read.connect(self.spammer)
+        self.worker.read.connect(self.feedback)
+        self.trigger_read.connect(self.spammer)
+        self.trigger_read.connect(self.worker.read_socket)
+        self.trigger_read.connect(self.worker.self_spammer)
 
-        s.connect((cfg.SEND_HOST, cfg.SEND_PORT))
-        s.setblocking(0)
-        data = None
-        ready = select.select([s], [], [], 10)
-        if ready[0]:
-            try:
-                data = s.recv(4096)
-            except:
-                raise
-        if data:
-            my_data = json.loads(data)
-            my_data['count'] = self._count
-            self._count += 1
-            self.event.emit(datetime.now(), my_data)
-            print(my_data)
-        s.close()
+        self.thread.start()
+    def spammer(self):
+        print (QtCore.QThread.currentThreadId())
+        print("SPAM")
+
+    def start(self):
+        self.trigger_read.emit()
+
+    def feedback(self):
+        self.trigger_read.emit()
 
 
 # used below
@@ -342,6 +387,7 @@ def scale_fluc(scale, count):
 #                                     max_count=center * 2
 #                                     )
 
+app = QtApplication()
 
 frame_source = ArmanListener()
 
@@ -389,7 +435,14 @@ p2 = PipelineComponent(lambda msg, data: (msg,
 
 # hook up everything
 # input
-frame_source.event.connect(dm.append_data)
+frame_source.worker.event.connect(dm.append_data)
+
+def event_watcher(obj, in_dict):
+    print(obj)
+
+frame_source.worker.event.connect(event_watcher)
+
+
 # first DataMuggler in to top of pipeline
 mw.sig.connect(p1.sink_slot)
 # p1 output -> p2 input
@@ -398,7 +451,7 @@ p1.source_signal.connect(p2.sink_slot)
 p2.source_signal.connect(dm2.append_data)
 
 
-app = QtApplication()
+
 
 with enaml.imports():
     from pipeline import PipelineView
@@ -410,10 +463,7 @@ cross_section_model = CrossSectionModel(data_muggler=dm, name='img',
 view = PipelineView(scalar_collection=scalar_collection,
                     cross_section_model=cross_section_model)
 view.show()
-
 frame_source.start()
-
-thread = QtCore.QThread()
-frame_source.moveToThread(thread)
-thread.start()
-app.start()
+print('source started')
+import sys
+sys.exit(app.start())
