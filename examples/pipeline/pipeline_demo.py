@@ -223,8 +223,6 @@ class FrameSourcerBrownian(QtCore.QObject):
             max_count = np.iinfo(np.int64).max
         self._max_count = max_count
 
-
-
         if I_fluc_function is None:
             I_fluc_function = lambda x: 1
 
@@ -298,7 +296,6 @@ class ArmanWorker(QtCore.QObject):
 
         self.read.connect(self.self_spammer)
 
-
     def self_spammer(self):
         print (QtCore.QThread.currentThreadId())
         print("self spam spam spam spam")
@@ -346,7 +343,7 @@ class ArmanListener(QtCore.QObject):
         self.thread = QtCore.QThread(parent=self)
         self.worker.moveToThread(self.thread)
 
-        #self.worker.event.connect(self.event)
+        self.worker.event.connect(self.event.emit)
         self.worker.read.connect(self.spammer)
         self.worker.read.connect(self.feedback)
         self.trigger_read.connect(self.spammer)
@@ -435,13 +432,7 @@ p2 = PipelineComponent(lambda msg, data: (msg,
 
 # hook up everything
 # input
-frame_source.worker.event.connect(dm.append_data)
-
-def event_watcher(obj, in_dict):
-    print(obj)
-
-frame_source.worker.event.connect(event_watcher)
-
+frame_source.event.connect(dm.append_data)
 
 # first DataMuggler in to top of pipeline
 mw.sig.connect(p1.sink_slot)
