@@ -94,13 +94,14 @@ class DisplayHeaderModel(Atom):
         data_keys = self._format_for_enaml(event_descriptors)
         sample = header_dict.pop('sample', {})
         beamline_config = header_dict.pop('beamline_config', {})
-        # unpack the 'ids' fields
-        ids = header_dict.pop('ids', {})
-        for id_name, id_val in ids.items():
-            header_dict[id_name] = id_val
+        # # unpack the 'ids' fields
+        # ids = header_dict.pop('ids', {})
+        # for id_name, id_val in ids.items():
+        #     header_dict[id_name] = id_val
         data_keys = sorted(data_keys, key=lambda x: x[0].lower())
         header_keys = key_labels + data_keys
 
+        print('header_dict = {}'.format(header_dict))
         # set the summary dictionary
         self.header_as_dict = header_dict
         # set the keys dictionary
@@ -115,13 +116,13 @@ class DisplayHeaderModel(Atom):
         for evd in event_descriptors:
             dk = evd.data_keys
             for data_key, data_key_dict in six.iteritems(dk):
+                print('data_key = {}\ndata_key_dict = {}'.format(
+                    data_key, data_key_dict))
                 while data_key in data_keys:
                     data_key += '_1'
                 name = data_key
                 src = data_key_dict['source']
-                loc = data_key_dict['external']
-                if loc is None:
-                    loc = 'metadatastore'
+                loc = data_key_dict.get('external', 'metadatastore')
                 data_keys.append([name, loc, src])
         return data_keys
 

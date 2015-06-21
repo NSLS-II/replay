@@ -81,9 +81,10 @@ enamldef MainView(MainWindow): main_view:
                 name = 'header_view'
                 title = "Run Summary"
                 Container:
-                    ScrollArea:
-                        DisplayHeaderView:
-                            display_header_model = main_view.display_header_model
+                    share_layout = True
+                    limit_height = 'strong'
+                    DisplayHeaderView:
+                        display_dict << main_view.display_header_model.header_as_dict
             DockItem: pv_view:
                 closable = False
                 name = 'pv_view'

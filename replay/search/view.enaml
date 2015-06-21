@@ -14,22 +14,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-enamldef DisplaySummary(Container):
-    """Enaml definition for the widget that displays a dictionary as a form
-    """
-    attr display_dict
-    Form:
-        padding = Box(0, 0, 0, 0)
-        row_spacing = 0
-        Looper:
-            iterable << sorted(display_dict)
-            Label:
-                text = loop_item
-            Field:
-                text = str(display_dict[loop_item])
-                read_only = True
-
-
 enamldef WatchForHeadersView(Container):
     """Enaml definition for the widget that displays the controls for
     how frequently databroker will be asked for its most recent header
@@ -146,12 +130,19 @@ enamldef ScanIDSearchView(Container):
         search_model = scan_id_model
 
 
-enamldef DisplayHeaderView(Container):
-    attr display_header_model
+enamldef DisplayHeaderView(ScrollArea):
     # GUI Element to show a RunHeader
-    DisplaySummary:
-        padding = Box(0, 0, 0, 0)
-        display_dict << display_header_model.header_as_dict
+    attr display_dict
+    Form:
+        share_layout = True
+        row_spacing = 0
+        Looper:
+            iterable << sorted(display_dict)
+            Label:
+                text = loop_item
+            Field:
+                text = str(display_dict[loop_item])
+                read_only = True
 
 enamldef DisplayPVView(Container):
     attr display_header_model
