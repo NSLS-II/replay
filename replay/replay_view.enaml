@@ -4,7 +4,7 @@ from .muxer import MuxerController
 from .scalar import PlotView, PlotControls
 
 from enaml.widgets.api import (MainWindow, Container, DockArea, DockItem,
-                               ScrollArea)
+                               ScrollArea, MultilineField)
 from enaml.layout.api import VSplitLayout, HSplitLayout, TabLayout
 import logging
 
@@ -81,10 +81,11 @@ enamldef MainView(MainWindow): main_view:
                 name = 'header_view'
                 title = "Run Summary"
                 Container:
-                    share_layout = True
-                    limit_height = 'strong'
-                    DisplayHeaderView:
-                        display_dict << main_view.display_header_model.header_as_dict
+                    # use a simple text area to display the header
+                    MultilineField:
+                        font = '8pt Monospace'
+                        text << str(main_view.display_header_model.header)
+                        read_only = True
             DockItem: pv_view:
                 closable = False
                 name = 'pv_view'

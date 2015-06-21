@@ -2,13 +2,14 @@
 
 import six
 
-from enaml.widgets.api import (Container, RadioButton, PushButton, Window,
-                               ScrollArea, Form, Label, GroupBox, SpinBox,
-                               Html, Field, Timer)
-from enaml.core.api import (Looper, Conditional, Include)
-from enaml.stdlib.fields import IntField
-from enaml.layout.api import (vbox, hbox, spacer, Box, factory, align)
+# wheee lazy imports!
+from enaml.widgets.api import *
+from enaml.core.api import *
+from enaml.stdlib.fields import *
+from enaml.layout.api import *
+
 from ..core import TimerButton, generate_grid
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -130,19 +131,6 @@ enamldef ScanIDSearchView(Container):
         search_model = scan_id_model
 
 
-enamldef DisplayHeaderView(ScrollArea):
-    # GUI Element to show a RunHeader
-    attr display_dict
-    Form:
-        share_layout = True
-        row_spacing = 0
-        Looper:
-            iterable << sorted(display_dict)
-            Label:
-                text = loop_item
-            Field:
-                text = str(display_dict[loop_item])
-                read_only = True
 
 enamldef DisplayPVView(Container):
     attr display_header_model
@@ -152,6 +140,7 @@ enamldef DisplayPVView(Container):
         constraints << [factory(generate_grid, 3)]
         Include:
             objects << gen_objects(display_header_model.header_keys)
+
 
 def gen_objects(keys):
     try:
@@ -165,6 +154,7 @@ def gen_objects(keys):
         objs.append(Label(text = key[1]))
         objs.append(Field(text=key[2], read_only=True))
     return objs
+
 
 enamldef GetLastWindow(Window): window:
     title = "Get Last"
