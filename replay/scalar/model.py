@@ -243,7 +243,7 @@ class ScalarCollection(Atom):
     # configuration properties for the 1-D plot
     _conf = Typed(ScalarConfig)
     # some id that replay uses as a key for plotting state
-    dataframe_id = Str()
+    dataframe_uid = Str()
     # the sql database that keeps track of headers from run-to-run
     history = Typed(History)
     # tell replay to use the state from the last selected header
@@ -267,23 +267,23 @@ class ScalarCollection(Atom):
             self._fig.set_tight_layout(True)
             self._ax = self._fig.add_subplot(111)
             self._conf = ScalarConfig(self._ax)
-            self.dataframe_id = ''
+            self.dataframe_uid = ''
 
-    @observe('dataframe_id')
-    def dataframe_id_changed(self, changed):
-        dataframe_id = changed['value']
-        if dataframe_id is None or dataframe_id == 'None' or dataframe_id == '':
-            dataframe_id = ''
+    @observe('dataframe_uid')
+    def dataframe_uid_changed(self, changed):
+        dataframe_uid = changed['value']
+        if dataframe_uid is None or dataframe_uid == 'None' or dataframe_uid == '':
+            dataframe_uid = ''
         with self.suppress_notifications():
-            self.dataframe_id = dataframe_id
-        logger.debug('dataframe id in scalar model: %s', self.dataframe_id)
+            self.dataframe_uid = dataframe_uid
+        logger.debug('dataframe id in scalar model: %s', self.dataframe_uid)
         try:
-            logger.debug('getting state for dataframe id: %s', self.dataframe_id)
-            state = self.history.get(six.text_type(self.dataframe_id))
-            logger.debug('state retrieved for dataframe id: %s\nstate: %s', self.dataframe_id, state)
+            logger.debug('getting state for dataframe id: %s', self.dataframe_uid)
+            state = self.history.get(six.text_type(self.dataframe_uid))
+            logger.debug('state retrieved for dataframe id: %s\nstate: %s', self.dataframe_uid, state)
         except IndexError:
             # there are no entries in the db for 'state'
-            logger.debug('no state found for dataframe id: %s', self.dataframe_id)
+            logger.debug('no state found for dataframe id: %s', self.dataframe_uid)
             state = {}
         if self.use_ram_state:
             # the state has already been correctly configured
@@ -307,8 +307,8 @@ class ScalarCollection(Atom):
                           'xlim': self.xlim, 'ylim': self.ylim,
                           'autolim_axes': self.autolim_axes}
         logger.debug('writing plotting state for id: [%s] ... %s',
-            self.dataframe_id, plotting_state)
-        replay.core.save_state(self.history, self.dataframe_id, plotting_state)
+            self.dataframe_uid, plotting_state)
+        replay.core.save_state(self.history, self.dataframe_uid, plotting_state)
 
     def clear_scalar_models(self):
         self._ax.cla()

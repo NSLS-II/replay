@@ -62,9 +62,13 @@ setup(
     version=FULLVERSION,
     author='Brookhaven National Laboratory',
     packages=['replay',
-              'replay.pipeline',
-              'replay.gui',
-              'replay.model'
+              'replay.muxer',
+              'replay.scalar',
+              'replay.search',
+              'replay.tests',
               ],
+    entry_points={
+        'console_scripts': [
+            'replay = replay.replay:main']},
     package_data={'replay.gui': ['*.enaml']}
 )

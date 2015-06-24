@@ -27,7 +27,7 @@ requirements:
     - bubblegum
     - scikit-xray
     - pims
-    - broker
+    - dataportal
 
 test:
   imports:

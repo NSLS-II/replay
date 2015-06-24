@@ -230,13 +230,13 @@ def test_replay_persistence():
     num_to_retrieve1 = random.randint(10, 20)
     # store some state
     state1 = {'x': 'Tsam', 'y': ['Tsam', 'point_det'], 'x_is_index': True}
-    h.put(six.text_type(rs1.id), state1)
-    returned_state = h.get(six.text_type(rs1.id))
+    h.put(six.text_type(rs1.uid), state1)
+    returned_state = h.get(six.text_type(rs1.uid))
     h.put('WatchForHeadersModel', {'update_rate': hdr_update_rate1})
     h.put('ScanIDSearchModel', {'scan_id': scan_id1})
     h.put('GetLastModel', {'num_to_retrieve': num_to_retrieve1})
     # store some more state
-    h.put(six.text_type(rs2.id), {'y': ['Tsam', 'point_det'],
+    h.put(six.text_type(rs2.uid), {'y': ['Tsam', 'point_det'],
                                   'x_is_index': True})
 
     # open up replay
@@ -245,7 +245,7 @@ def test_replay_persistence():
     ui.title = ('Testing replay by manually triggering various models. '
                 'Sit back and enjoy the show!')
     ui.show()
-    hdr1 = db.find_headers(_id=rs1.id)[0]
+    hdr1 = db.find_headers(uid=rs1.uid)[0]
     ui.muxer_model.header = hdr1
     # start replay so that it will stop in 4 seconds
     app.timed_call(4000, app.stop)
@@ -254,7 +254,8 @@ def test_replay_persistence():
     try:
         # check that the observer between the muxer model and the scalar collection
         # is working properly
-        assert six.text_type(ui.scalar_collection.dataframe_id) == six.text_type(rs1.id)
+        assert (six.text_type(ui.scalar_collection.dataframe_uid) ==
+                six.text_type(rs1.uid))
         # check that the scalar collection is correctly loading plotting state
         assert ui.scalar_collection.x == state1['x']
         # check that the scalar collection is correctly loading plotting state
@@ -282,8 +283,8 @@ def test_replay_persistence():
 
     # store some state for the 2nd header that differs from the first
     state2 = {'x': 'point_det', 'y': ['Tsam'], 'x_is_index': False}
-    h.put(six.text_type(rs2.id), state2)
-    hdr2 = db.find_headers(_id=rs2.id)[0]
+    h.put(six.text_type(rs2.uid), state2)
+    hdr2 = db.find_headers(_id=rs2.uid)[0]
     ui.muxer_model.header = hdr2
 
 
@@ -294,7 +295,7 @@ def test_replay_persistence():
     try:
         # check that the observer between the muxer model and the scalar collection
         # is working properly
-        assert six.text_type(ui.scalar_collection.dataframe_id) == six.text_type(rs2.id)
+        assert six.text_type(ui.scalar_collection.dataframe_uid) == six.text_type(rs2.uid)
         # check that the scalar collection is correctly loading plotting state
         assert ui.scalar_collection.x == state2['x']
         # check that the scalar collection is correctly loading plotting state
@@ -336,7 +337,7 @@ def test_replay_persistence():
     try:
         # check that the observer between the muxer model and the scalar collection
         # is working properly
-        assert six.text_type(ui.scalar_collection.dataframe_id) == six.text_type(rs1.id)
+        assert six.text_type(ui.scalar_collection.dataframe_uid) == six.text_type(rs1.uid)
         # check that the scalar collection is correctly loading plotting state
         assert ui.scalar_collection.x == state2['x']
         # check that the scalar collection is correctly loading plotting state
@@ -371,7 +372,7 @@ def test_replay_persistence():
 
     # the original state for run header 2 is now the state for run header 2.
     # Let's change the state for run header 2 on disk and switch back.
-    h.put(six.text_type(rs2.id), state1)
+    h.put(six.text_type(rs2.uid), state1)
     ui.muxer_model.header = hdr2
     app.timed_call(1000, app.stop)
     app.start()    # make sure that the things that are display are the things that we think
@@ -379,7 +380,7 @@ def test_replay_persistence():
     try:
         # check that the observer between the muxer model and the scalar collection
         # is working properly
-        assert six.text_type(ui.scalar_collection.dataframe_id) == six.text_type(rs2.id)
+        assert six.text_type(ui.scalar_collection.dataframe_uid) == six.text_type(rs2.uid)
         # check that the scalar collection is correctly loading plotting state
         assert ui.scalar_collection.x == state1['x']
         # check that the scalar collection is correctly loading plotting state
