@@ -90,3 +90,6 @@ __enamlcache__/
 
 # PyBuilder
 target/
+
+*.swp
+*.swo

@@ -1,4 +1,4 @@
-from .search import (GetLastView, WatchForHeadersView, DisplayHeaderView,
+from .search import (GetLastView, WatchForHeadersView, 
                      DisplayPVView, ScanIDSearchView)
 from .muxer import MuxerController
 from .scalar import PlotView, PlotControls
@@ -28,8 +28,8 @@ def define_layout(init_params, watch_header, header_view, pv_view, muxer,
                 VSplitLayout(
                     TabLayout(get_last, watch_header, scan_id,
                               index=init_params['search_tab_index']),
-                    TabLayout(header_view, pv_view,),
-                    muxer),
+                    TabLayout(header_view, pv_view, muxer),
+                ),
                 scalar_plot_controls),
             scalar_plot,)
 

@@ -19,4 +19,4 @@ else:
 
     with enaml.imports():
         from .view import (GetLastView, GetLastWindow, WatchForHeadersView,
-                           DisplayHeaderView, DisplayPVView, ScanIDSearchView)
+                           DisplayPVView, ScanIDSearchView)
