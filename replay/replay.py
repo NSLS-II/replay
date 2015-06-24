@@ -176,6 +176,8 @@ def main():
         ui.muxer_model.header = db[-1]
     except IndexError:
         pass
+    except ValueError:
+        pass
 
     app.start()
 

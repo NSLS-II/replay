@@ -132,30 +132,6 @@ enamldef ScanIDSearchView(Container):
 
 
 
-enamldef DisplayPVView(Container):
-    attr display_header_model
-    Container:
-        padding = Box(0, 0, 0, 0)
-        # GUI element to show a grid of PV information
-        constraints << [factory(generate_grid, 3)]
-        Include:
-            objects << gen_objects(display_header_model.header_keys)
-
-
-def gen_objects(keys):
-    try:
-        headers = keys[0]
-    except IndexError:
-        return []
-    objs = [Label(text=headers[0]), Label(text=headers[1]),
-            Label(text=headers[2])]
-    for key in keys[1:]:
-        objs.append(Label(text = key[0]))
-        objs.append(Label(text = key[1]))
-        objs.append(Field(text=key[2], read_only=True))
-    return objs
-
-
 enamldef GetLastWindow(Window): window:
     title = "Get Last"
     attr get_last_model
